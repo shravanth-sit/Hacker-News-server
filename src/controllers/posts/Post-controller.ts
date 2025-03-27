@@ -13,11 +13,11 @@ export const getPosts = async (parameters: {
   offset: number;
 }): Promise<GetPostsResult> => {
   try {
-    const posts = await prisma.Post.findMany({
+    const posts = await prisma.post.findMany({
       take: parameters.limit,
       skip: parameters.offset,
       orderBy: {
-        createdAt: "desc",
+        createAt: "desc",
       },
     });
 
@@ -45,7 +45,7 @@ export const getMyPosts = async (parameters: {
       take: parameters.limit,
       skip: parameters.offset,
       orderBy: {
-        createdAt: "desc",
+        createAt: "desc",
       },
     });
 
