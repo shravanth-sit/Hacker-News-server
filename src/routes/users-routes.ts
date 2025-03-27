@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { prismaClient } from "../extras/prisma";
+import { prisma } from "../extras/prisma";
 import { tokenMiddleware } from "./middlewares/token-middleware";
 import { getAllUsers, getMe } from "../controllers/users/users-controllers";
 import { GetMeError } from "../controllers/users/users-type";
