@@ -1,20 +1,37 @@
-import { supabase } from "../../extras/supabaseClient";
+import supabase from '../../extras/supabaseClient';
 import { IncomingMessage, ServerResponse } from "http";
 
 export const createPost = async (req: IncomingMessage, res: ServerResponse) => {
   const userId = req.headers["user-id"];
-  if (!userId) return res.writeHead(401, { "Content-Type": "application/json" }, JSON.stringify({ error: "Unauthorized" }));
+  if (!userId) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.writeHead(401, JSON.stringify({ error: "Unauthorized" }));
+  }
 
-  const { title, content } = JSON.parse(req.body);
-  if (!title || !content) return res.writeHead(400, { "Content-Type": "application/json" }, JSON.stringify({ error: "Title and content are required" }));
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk;
+  });
 
-  const { data, error } = await supabase
-    .from("posts")
-    .insert([{ title, content, author_id: userId }])
-    .select();
+  req.on('end', async () => {
+    const { title, content } = JSON.parse(body);
+    if (!title || !content) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.writeHead(400, JSON.stringify({ error: "Title and content are required" }));
+    }
 
-  if (error) return res.writeHead(500, { "Content-Type": "application/json" }, JSON.stringify({ error: error.message }));
+    const { data, error } = await supabase
+      .from("posts")
+      .insert([{ title, content, author_id: userId }])
+      .select();
 
-  res.writeHead(201, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(data[0]));
+    if (error) {
+      res.setHeader('Content-Type', 'application/json');
+      return res.writeHead(500, JSON.stringify({ error: error.message }));
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.writeHead(201);
+    res.end(JSON.stringify(data[0]));
+  });
 };
