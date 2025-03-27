@@ -36,7 +36,7 @@ export const getAllPosts = async (
     const skip = (page - 1) * limit;
 
     const posts = await prismaClient.post.findMany({
-      orderBy: { createAt: "desc" },
+      orderBy: { createdAt: "desc" },
       skip,
       take: limit,
       include: {
@@ -73,7 +73,7 @@ export const getUserPosts = async (
 
     const posts = await prismaClient.post.findMany({
       where: { authorId: userId },
-      orderBy: { createAt: "desc" },
+      orderBy: { createdAt: "desc" },
       skip,
       take: limit,
       include: {
