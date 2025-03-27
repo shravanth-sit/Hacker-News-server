@@ -6,14 +6,14 @@ import {
   type GetMyPostsResult,
   type CreatePostResult,
   type DeletePostResult,
-} from "./post-types";
+} from "./Post-types";
 
 export const getPosts = async (parameters: {
   limit: number;
   offset: number;
 }): Promise<GetPostsResult> => {
   try {
-    const posts = await prisma.post.findMany({
+    const posts = await prisma.Post.findMany({
       take: parameters.limit,
       skip: parameters.offset,
       orderBy: {

@@ -1,34 +1,68 @@
-import { createServer } from "http";
-import { getAllPosts } from "../controllers/posts/getAllPosts";
-import { getMyPosts } from "../controllers/posts/get_my_posts";
-import { createPost } from "../controllers/posts/createPost";
-import { deletePost } from "../controllers/posts/deletePost";
-import { authMiddleware } from "../middlewares/authMiddleware";
+import { Hono } from "hono";
+import { getPosts, getMyPosts, createPost, deletePost } from "../controllers/post/post-controller";
+import { GetPostsError, GetMyPostsError, CreatePostError, DeletePostError } from "../controllers/post/post-types";
 
-const server = createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+export const postRoutes = new Hono();
 
-  if (url.pathname === "/posts") {
-    getAllPosts(req, res);
-  } else if (url.pathname === "/posts/me") {
-    authMiddleware()(req, res, () => {
-      getMyPosts(req, res);
-    });
-  } else if (url.pathname === "/posts" && req.method === "POST") {
-    authMiddleware()(req, res, () => {
-      createPost(req, res);
-    });
-  } else if (url.pathname.startsWith("/posts/") && req.method === "DELETE") {
-    const postId = url.pathname.split("/").pop();
-    authMiddleware()(req, res, () => {
-      deletePost(req, res);
-    });
-  } else {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found" }));
+postRoutes.get("/posts", async (c) => {
+  try {
+    const limit = c.req.query("limit");
+    const offset = c.req.query("offset");
+    const result = await getPosts({ limit, offset });
+
+    return c.json({ data: result }, 200);
+  } catch (error) {
+    if (error === GetPostsError.UNKNOWN) {
+      return c.json({ error: "Unknown error" }, 500);
+    }
   }
 });
 
-server.listen(3000, () => {
-  console.log("Server running on port 3000");
+postRoutes.get("/posts/me", async (c) => {
+  try {
+    const userId = c.req.headers.get("Authorization");
+    const limit = c.req.query("limit");
+    const offset = c.req.query("offset");
+    const result = await getMyPosts({ limit, offset, userId });
+
+    return c.json({ data: result }, 200);
+  } catch (error) {
+    if (error === GetMyPostsError.UNKNOWN) {
+      return c.json({ error: "Unknown error" }, 500);
+    }
+  }
+});
+
+postRoutes.post("/posts", async (c) => {
+  try {
+    const { title, content } = await c.req.json();
+    const userId = c.req.headers.get("Authorization");
+    const result = await createPost({ title, content, userId });
+
+    return c.json({ data: result }, 201);
+  } catch (error) {
+    if (error === CreatePostError.UNKNOWN) {
+      return c.json({ error: "Unknown error" }, 500);
+    }
+  }
+});
+
+postRoutes.delete("/posts/:postId", async (c) => {
+  try {
+    const postId = c.req.param("postId");
+    const userId = c.req.headers.get("Authorization");
+    const result = await deletePost({ postId, userId });
+
+    return c.json({ data: result }, 200);
+  } catch (error) {
+    if (error === DeletePostError.POST_NOT_FOUND) {
+      return c.json({ error: "Post not found" }, 404);
+    }
+    if (error === DeletePostError.NOT_OWNED_BY_USER) {
+      return c.json({ error: "Post not owned by user" }, 403);
+    }
+    if (error === DeletePostError.UNKNOWN) {
+      return c.json({ error: "Unknown error" }, 500);
+    }
+  }
 });
