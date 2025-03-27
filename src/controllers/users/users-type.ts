@@ -22,13 +22,13 @@ export enum GetMeError {
 //   totalPages: number;
 //   currentPage: number;
 // }
-export type UserResponse = {
-  id: string;
-  username: string;
-  name: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type UserResponse = Partial<{
+    id: string;
+    username: string;
+    name: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 
 export type GetAllUsersResult = {
   users: UserResponse[];
