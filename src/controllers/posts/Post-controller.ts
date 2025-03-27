@@ -7,7 +7,7 @@ import {
   type GetPostsResult,//getting error in this line
   GetPostsError,
   DeletePostError
-} from "./post-types";
+} from "./Post-types";
 
 export const createPost = async (
   parameters: CreatePostParameters & { authorId: string }
@@ -36,7 +36,7 @@ export const getAllPosts = async (
     const skip = (page - 1) * limit;
 
     const posts = await prismaClient.post.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createAt: "desc" },
       skip,
       take: limit,
       include: {
@@ -73,7 +73,7 @@ export const getUserPosts = async (
 
     const posts = await prismaClient.post.findMany({
       where: { authorId: userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createAt: "desc" },
       skip,
       take: limit,
       include: {

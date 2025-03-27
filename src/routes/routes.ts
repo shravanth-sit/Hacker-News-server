@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { authenticationRoutes } from "./authentication-routes";
 import { usersRoutes } from "./users-routes";
-import { postsRoutes } from "./posts-routes";
+import { postsRoutes } from "./posts";
 import { logger } from "hono/logger";
 
 export const allRoutes = new Hono();

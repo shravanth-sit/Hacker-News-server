@@ -6,12 +6,12 @@ import {
   getAllPosts, 
   getUserPosts, 
   deletePost 
-} from "../controllers/posts/post-controller";
+} from "../controllers/posts/Post-controller";
 import { 
   CreatePostError, 
   GetPostsError,
   DeletePostError
-} from "../controllers/posts/post-types";
+} from "../controllers/posts/Post-types";
 
 export const postsRoutes = new Hono();
 
