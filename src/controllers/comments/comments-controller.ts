@@ -22,7 +22,7 @@ export const createComment = async (params: {
 
     const result = await prisma.comment.create({
       data: {
-        content: params.content,
+        text: params.content,
         post: { connect: { id: params.postId } },
         user: { connect: { id: params.userId } },
       },
@@ -109,7 +109,7 @@ export const updateComment = async (params: {
 
     await prisma.comment.update({
       where: { id: params.commentId },
-      data: { content: params.content },
+      data: { text: params.content },
     });
 
     return CommentStatus.UPDATE_SUCCESS;
