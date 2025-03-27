@@ -1,5 +1,5 @@
 // src/controllers/posts/post-controller.ts
-import { prismaClient } from "../../extras/prisma";
+import { prisma } from "../../extras/prisma";
 import { 
   type CreatePostParameters, //getting error in this line
   type CreatePostResult, //getting error in this line
@@ -13,7 +13,7 @@ export const createPost = async (
   parameters: CreatePostParameters & { authorId: string }
 ): Promise<CreatePostResult> => {
   try {
-    const post = await prismaClient.post.create({
+    const post = await prisma.post.create({
       data: {
         title: parameters.title,
         content: parameters.content,
@@ -35,7 +35,7 @@ export const getAllPosts = async (
   try {
     const skip = (page - 1) * limit;
 
-    const posts = await prismaClient.post.findMany({
+    const posts = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -49,7 +49,7 @@ export const getAllPosts = async (
       }
     });
 
-    const totalPosts = await prismaClient.post.count();
+    const totalPosts = await prisma.post.count();
 
     return {
       posts,
@@ -71,7 +71,7 @@ export const getUserPosts = async (
   try {
     const skip = (page - 1) * limit;
 
-    const posts = await prismaClient.post.findMany({
+    const posts = await prisma.post.findMany({
       where: { authorId: userId },
       orderBy: { createdAt: "desc" },
       skip,
@@ -86,7 +86,7 @@ export const getUserPosts = async (
       }
     });
 
-    const totalPosts = await prismaClient.post.count({
+    const totalPosts = await prisma.post.count({
       where: { authorId: userId }
     });
 
@@ -107,7 +107,7 @@ export const deletePost = async (
   userId: string
 ): Promise<void> => {
   // First, verify the post exists and belongs to the user
-  const post = await prismaClient.post.findUnique({
+  const post = await prisma.post.findUnique({
     where: { 
       id: postId,
       authorId: userId 
@@ -120,7 +120,7 @@ export const deletePost = async (
 
   // Delete the post
   try {
-    await prismaClient.post.delete({
+    await prisma.post.delete({
       where: { id: postId }
     });
   } catch (error) {
