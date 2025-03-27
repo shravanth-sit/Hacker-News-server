@@ -5,15 +5,38 @@ export type GetMeResult = {
 };
 
 export enum GetMeError {
-    UNKNOWN = "UNKNOWN",
-    USER_NOT_FOUND = "USER_NOT_FOUND",
+  BAD_REQUEST,
 }
+
+// export interface UserResponse {
+//   id: string;
+//   username: string;
+//   name: string | null;
+//   createdAt: Date;
+//   updatedAt: Date;
+// }
+
+// export interface GetAllUsersResult {
+//   users: UserResponse[];
+//   totalUsers: number;
+//   totalPages: number;
+//   currentPage: number;
+// }
+export type UserResponse = {
+  id: string;
+  username: string;
+  name: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type GetAllUsersResult = {
-    users: User[];
-}
+  users: UserResponse[];
+  totalUsers: number;
+  totalPages: number;
+  currentPage: number;
+};
 
-export enum GetAllUsersError {
-    NO_USERS_FOUND = "NO_USERS_FOUND",
-    UNKNOWN = "UNKNOWN",
+export enum UsersError {
+  BAD_REQUEST,
 }

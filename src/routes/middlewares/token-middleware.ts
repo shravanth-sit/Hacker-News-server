@@ -2,7 +2,6 @@ import { createMiddleware } from "hono/factory";
 import jwt from "jsonwebtoken";
 import { jwtSecretKey } from "../../../environment";
 
-//high-order function -> function having a function as a parameter which returns a function
 export const tokenMiddleware = createMiddleware<{
   Variables: {
     userId: string;
@@ -11,7 +10,12 @@ export const tokenMiddleware = createMiddleware<{
   const token = context.req.header("token");
 
   if (!token) {
-    return context.json({ error: "Unauthorized" }, 401);
+    return context.json(
+      {
+        message: "Missing Token",
+      },
+      401
+    );
   }
 
   try {
@@ -19,11 +23,24 @@ export const tokenMiddleware = createMiddleware<{
 
     const userId = payload.sub;
 
-      if (userId) {
-          context.set("userId", userId);
-      }
-  } catch (error) {
-    return context.json({ error: "Unauthorized" }, 401);
+    if (userId) {
+      context.set("userId", userId);
+    } else {
+      return context.json(
+        {
+          message: "Unauthorised",
+        },
+        401
+      );
+    }
+
+    await next();
+  } catch (e) {
+    return context.json(
+      {
+        message: "Unauthorised",
+      },
+      401
+    );
   }
-  await next();
 });

@@ -1,43 +1,41 @@
-import { prisma } from "../../extras/prisma";
-import { GetMeError, type GetMeResult, type GetAllUsersResult, GetAllUsersError } from "./users-type";
+import { prismaClient } from "../../extras/prisma";
+import { GetMeError, type GetAllUsersResult, type GetMeResult } from "./users-types";
+
+export const getMe = async (parameters: { userId: string }): Promise<GetMeResult> => {
+  const user = await prismaClient.user.findUnique({
+    where: {
+      id: parameters.userId,
+    },
+  });
+
+  if (!user) {
+    throw GetMeError.BAD_REQUEST;
+  }
+
+  return {
+    user,
+  };
+};
 
 
-export const GetMe = async (parameters: {
-    userId: string;
-}): Promise<GetMeResult> => {
-    try {
-        const user = await prisma.user.findUnique({
-        where: { id: parameters.userId },
-    });
+// import { prismaClient } from "../prismaClient"; // Ensure this is correctly imported
+// import { GetAllUsersResult } from "./user-types";
 
-        if (!user) {
-            throw GetMeError.USER_NOT_FOUND;
-        }
+export const getAllUsers = async (page: number = 1, limit: number = 10): Promise<GetAllUsersResult> => {
+  const skip = (page - 1) * limit;
 
-        const result: GetMeResult = {
-            user: user,
-        }
+  const users = await prismaClient.user.findMany({
+    orderBy: { username: "asc" }, // Sort alphabetically
+    skip,
+    take: limit,
+  });
 
-        return result;
-    } catch (e) {
-        console.error(e);
-        throw GetMeError.UNKNOWN;
-    }
-}
+  const totalUsers = await prismaClient.user.count(); // Get total number of users
 
-export const GetAllUsers = async (): Promise<GetAllUsersResult> => {
-    try {
-        const users = await prisma.user.findMany();
-        if (!users) {
-            throw GetAllUsersError.NO_USERS_FOUND;
-        }
-        const result: GetAllUsersResult = {
-            users: users,
-        }
-        return result;
-        
-    } catch (e) {
-        console.error(e);
-        throw GetAllUsersError.UNKNOWN;
-    }
-}
+  return {
+    users,
+    totalUsers,
+    totalPages: Math.ceil(totalUsers / limit),
+    currentPage: page,
+  };
+};

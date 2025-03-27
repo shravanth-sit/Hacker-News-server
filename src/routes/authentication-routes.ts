@@ -1,53 +1,81 @@
 import { Hono } from "hono";
-import { logInWithUsernameAndPassword, signUpWithUsernameAndPassword } from "../controllers/authentication/authentication-controller";
-import { LogInWithUsernameAndPasswordError, SignUpWithUsernameAndPasswordError } from "../controllers/authentication/authentication-types";
-
+import {
+  logInWithUsernameAndPassword,
+  signUpWithUsernameAndPassword,
+} from "../controllers/authentication/authentication-controller";
+import {
+  LogInWtihUsernameAndPasswordError,
+  SignUpWithUsernameAndPasswordError,
+} from "../controllers/authentication/authentication-types";
 
 export const authenticationRoutes = new Hono();
 
+authenticationRoutes.post("/sign-up", async (context) => {
+  const { username, password } = await context.req.json();
 
-authenticationRoutes.post("/sign-up", async (c) => {
-  const { username, password } = await c.req.json();
   try {
     const result = await signUpWithUsernameAndPassword({
       username,
       password,
     });
 
-    return c.json({ data: result }, 200);
-  } catch (error) {
-    if (error === SignUpWithUsernameAndPasswordError.CONFLICTING_USERNAME) {
-      return c.json({ error: "Username already exists" }, 409);
+    return context.json(
+      {
+        data: result,
+      },
+      201
+    );
+  } catch (e) {
+    if (e === SignUpWithUsernameAndPasswordError.CONFLICTING_USERNAME) {
+      return context.json(
+        {
+          message: "Username already exists",
+        },
+        409
+      );
     }
 
-    if (error === SignUpWithUsernameAndPasswordError.UNKNOWN) {
-      return c.json({ error: "Unknown error" }, 500);
-    }
+    return context.json(
+      {
+        mesage: "Unknown",
+      },
+      500
+    );
   }
 });
 
-authenticationRoutes.post("/log-in", async (c) => {
+authenticationRoutes.post("/log-in", async (context) => {
   try {
-    const { username, password } = await c.req.json();
+    const { username, password } = await context.req.json();
 
     const result = await logInWithUsernameAndPassword({
       username,
       password,
     });
 
-    return c.json(
+    return context.json(
       {
         data: result,
       },
-      200
+      201
     );
-  } catch (error) {
-    if (
-      error === LogInWithUsernameAndPasswordError.INCORRECT_USERNAME_OR_PASSWORD
-    ) {
-      return c.json({ error: "Incorrect username or password" }, 401);
+  } catch (e) {
+    console.log("Error", e);
+
+    if (e === LogInWtihUsernameAndPasswordError.INCORRECT_USERNAME_OR_PASSWORD) {
+      return context.json(
+        {
+          message: "Incorrect username or password",
+        },
+        401
+      );
     }
 
-    return c.json({ error: "Unknown error" }, 500);
+    return context.json(
+      {
+        message: "Unknown",
+      },
+      500
+    );
   }
 });

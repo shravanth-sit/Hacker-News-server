@@ -1,68 +1,175 @@
+// src/routes/posts-routes.ts
 import { Hono } from "hono";
-import { getPosts, getMyPosts, createPost, deletePost } from "../controllers/post/post-controller";
-import { GetPostsError, GetMyPostsError, CreatePostError, DeletePostError } from "../controllers/post/post-types";
+import { tokenMiddleware } from "./middlewares/token-middleware";
+import { 
+  createPost, 
+  getAllPosts, 
+  getUserPosts, 
+  deletePost 
+} from "../controllers/posts/post-controller";
+import { 
+  CreatePostError, 
+  GetPostsError,
+  DeletePostError
+} from "../controllers/posts/post-types";
 
-export const postRoutes = new Hono();
+export const postsRoutes = new Hono();
 
-postRoutes.get("/posts", async (c) => {
+// GET all posts
+postsRoutes.get("", tokenMiddleware, async (context) => {
   try {
-    const limit = c.req.query("limit");
-    const offset = c.req.query("offset");
-    const result = await getPosts({ limit, offset });
+    const page = parseInt(context.req.query("page") || "1", 10);
+    const limit = parseInt(context.req.query("limit") || "10", 10);
 
-    return c.json({ data: result }, 200);
-  } catch (error) {
-    if (error === GetPostsError.UNKNOWN) {
-      return c.json({ error: "Unknown error" }, 500);
+    if (page < 1 || limit < 1) {
+      return context.json({
+        message: "Invalid page or limit"
+      }, 400);
     }
+
+    const posts = await getAllPosts(page, limit);
+
+    return context.json(
+      {
+        data: posts,
+      },
+      200
+    );
+  } catch (e) {
+    if (e === GetPostsError.UNAUTHORIZED) {
+      return context.json(
+        {
+          message: "Unauthorized",
+        },
+        401
+      );
+    }
+
+    return context.json(
+      {
+        message: "Internal Server Error",
+      },
+      500
+    );
   }
 });
 
-postRoutes.get("/posts/me", async (c) => {
+// GET current user's posts
+postsRoutes.get("/me", tokenMiddleware, async (context) => {
   try {
-    const userId = c.req.headers.get("Authorization");
-    const limit = c.req.query("limit");
-    const offset = c.req.query("offset");
-    const result = await getMyPosts({ limit, offset, userId });
+    const userId = context.get("userId");
+    const page = parseInt(context.req.query("page") || "1", 10);
+    const limit = parseInt(context.req.query("limit") || "10", 10);
 
-    return c.json({ data: result }, 200);
-  } catch (error) {
-    if (error === GetMyPostsError.UNKNOWN) {
-      return c.json({ error: "Unknown error" }, 500);
+    if (page < 1 || limit < 1) {
+      return context.json({
+        message: "Invalid page or limit"
+      }, 400);
     }
+
+    const posts = await getUserPosts(userId, page, limit);
+
+    return context.json(
+      {
+        data: posts,
+      },
+      200
+    );
+  } catch (e) {
+    if (e === GetPostsError.UNAUTHORIZED) {
+      return context.json(
+        {
+          message: "Unauthorized",
+        },
+        401
+      );
+    }
+
+    return context.json(
+      {
+        message: "Internal Server Error",
+      },
+      500
+    );
   }
 });
 
-postRoutes.post("/posts", async (c) => {
+// CREATE a post
+postsRoutes.post("", tokenMiddleware, async (context) => {
   try {
-    const { title, content } = await c.req.json();
-    const userId = c.req.headers.get("Authorization");
-    const result = await createPost({ title, content, userId });
+    const userId = context.get("userId");
+    const { title, content } = await context.req.json();
 
-    return c.json({ data: result }, 201);
-  } catch (error) {
-    if (error === CreatePostError.UNKNOWN) {
-      return c.json({ error: "Unknown error" }, 500);
+    // Validate input
+    if (!title || !content) {
+      return context.json(
+        {
+          message: "Title and content are required",
+        },
+        400
+      );
     }
+
+    const result = await createPost({
+      title,
+      content,
+      authorId: userId
+    });
+
+    return context.json(
+      {
+        data: result.post,
+      },
+      201
+    );
+  } catch (e) {
+    if (e === CreatePostError.UNAUTHORIZED) {
+      return context.json(
+        {
+          message: "Unauthorized",
+        },
+        401
+      );
+    }
+
+    return context.json(
+      {
+        message: "Internal Server Error",
+      },
+      500
+    );
   }
 });
 
-postRoutes.delete("/posts/:postId", async (c) => {
+// DELETE a post
+postsRoutes.delete("/:postId", tokenMiddleware, async (context) => {
   try {
-    const postId = c.req.param("postId");
-    const userId = c.req.headers.get("Authorization");
-    const result = await deletePost({ postId, userId });
+    const userId = context.get("userId");
+    const postId = context.req.param("postId");
 
-    return c.json({ data: result }, 200);
-  } catch (error) {
-    if (error === DeletePostError.POST_NOT_FOUND) {
-      return c.json({ error: "Post not found" }, 404);
+    await deletePost(postId, userId);
+
+    return context.json(
+      {
+        message: "Post deleted successfully",
+      },
+      200
+    );
+  } catch (e) {
+    if (e === DeletePostError.NOT_FOUND) {
+      return context.json(
+        {
+          message: "Post not found or unauthorized",
+        },
+        404
+      );
     }
-    if (error === DeletePostError.NOT_OWNED_BY_USER) {
-      return c.json({ error: "Post not owned by user" }, 403);
-    }
-    if (error === DeletePostError.UNKNOWN) {
-      return c.json({ error: "Unknown error" }, 500);
-    }
+
+    return context.json(
+      {
+        message: "Internal Server Error",
+      },
+      500
+    );
   }
 });
